@@ -87,6 +87,12 @@ B = (1/(2*A(i)))*[b(i,1) 0 b(i,2) 0 b(i,3) 0;0 c(i,1) 0 c(i,2) 0 c(i,3); c(i,1) 
 
 K = A(i)*t(i)*B'*C*B;
 
+if(i==1)
+    Kelem1=K;
+else
+    Kelem2=K;
+end
+
 %SUPERPOSIÇÃO
 
 for j = 1:noselem
@@ -102,8 +108,14 @@ for j = 1:noselem
         end
     end
 end
+if(i==1)
+    Kglobal1=Kglobal;
+else
+    Kglobal2=Kglobal;
 end
 end
+end
+Kglobal;
 
 %MATRIZ CARREGAMENTO
 
