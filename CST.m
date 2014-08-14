@@ -41,7 +41,7 @@ restricao = [1 x; 1 y; 4 x; 4 y];   %localização e direção da restrição
 %CÁLCULO DA MATRIZ CONSTITUTIVA DE CADA ELEMENTO
 for k = 1:nelem
     C =(E(k)/(1-v(k)^2))*[1 v(k) 0; v(k) 1 0; 0 0 ((1-v(k))/2)];    %matriz constitutiva
-
+end
 %MATRIZ RIGIDEZ E SUPERPOSIÇÃO
 
 for i = 1:nnods*dfreedom
@@ -114,7 +114,7 @@ else
     Kglobal2=Kglobal;
 end
 end
-end
+% end
 Kglobal;
 
 %MATRIZ CARREGAMENTO
