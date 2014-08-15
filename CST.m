@@ -15,13 +15,13 @@ y = 1   %eixo e coordenadas na direção y representado por 1
 %PROPRIEDADES DO MATERIAL DE CADA ELEMENTO
 for i=1:nelem
 E(i) = 1    %módulo de elasticidade do material em N/mm^2
-v(i) = 0.000001     %coeficiente de Poisson
+v(i) = 0     %coeficiente de Poisson
 t(i) = 1    %espessura do cada elemento em mm
 end
 
 rho=1;
 
-thic=1;
+% thic=1;
 
 
 
@@ -61,7 +61,7 @@ for i = 1:nelem
     A(i) = 0.5*det([1 X(i,1) Y(i,1); 1 X(i,2) Y(i,2); 1 X(i,3) Y(i,3)]);
     
     
-    M=rho*A(i)*thic/3*eye(3);
+    M=rho*A(i)*t(i)/3*eye(3);
 
 %CÁLCULO DOS COEFICIENTES DE FORMA
 
@@ -95,6 +95,8 @@ end
 
 %SUPERPOSIÇÃO
 
+% Mglobal(dfreedom*(nnods-1),dfreedom*(nnods-1))=0;
+
 for j = 1:noselem
     for k = 1:dfreedom
         colE = (j-1)*dfreedom + k;
@@ -104,6 +106,7 @@ for j = 1:noselem
                 colG = (conectividades(i,j)-1)*dfreedom + k;
                 linG = (conectividades(i,l)-1)*dfreedom + m;
                 Kglobal(linG,colG) = Kglobal(linG,colG) + K(linE,colE);
+%                 Mglobal(linG,colG) = Mglobal(linG,colG) + M(linE,colE);
             end
         end
     end
@@ -114,8 +117,10 @@ else
     Kglobal2=Kglobal;
 end
 end
-% end
+% end % Gabriel falou que precisa fechar aqui pois deve fazer para cada
+% material
 Kglobal;
+Mglobal=eye(size(Kglobal));
 
 %MATRIZ CARREGAMENTO
 
@@ -123,6 +128,7 @@ for i = 1:ncargas
     linG = 2*carga(i,1)-(1-carga(i,2));
     Lglobal(linG) = Lglobal(linG) + carga(i,3);
 end
+
 
 %CONDIÇÕES DE CONTORNO
 
@@ -132,14 +138,65 @@ for i = 1:nrestricao
     for j = 1:nnods*dfreedom
         if linG == j;
             Kglobal(linG,j) = 1;
+            Mglobal(linG,j) = 1;
         else Kglobal(linG,j) = 0;
+            Mglobal(linG,j) = 0;
         end
         if linG == j;
             Kglobal(j,linG) = 1;
+            Mglobal(j,linG) = 1;
         else Kglobal(j,linG) = 0;
+            Mglobal(j,linG) =0;            
         end
     end
 end 
+
+%---------Area de Compatibilidade------------------------------------------
+% t=linspace(0,60,31);
+t=0:0.01:120;
+
+M=Mglobal;
+K=Kglobal;
+
+ndof = length(M);
+Bt = zeros(ndof,1);
+
+Bt(3)=1;
+Bt(5)=1;
+
+Damp=zeros(size(Kglobal));
+
+vel(nnods*nelem,length(t))=0;
+
+disp(nnods*nelem,length(t))=0;
+
+F(1:length(t))=0.5;
+
+% %------------------------------------------------------------------------
+% function [disp,vel,acc] = newmark_linear(M,K,Damp,Bt,F,t,vel,disp)
+dt=t(2)-t(1);
+% Newmark parameters
+gamma = 1/2;
+Beta = 1/4;
+% Initialization
+% acc(:,1)=inv(M)*(Bt*F(1)-Damp*vel(:,1)-K*disp(:,1));
+acc(:,1)=M\(Bt*F(1)-Damp*vel(:,1)-K*disp(:,1));
+for i =2:length(t);
+    % Prediction
+    vel(:,i) = vel(:,i-1)+(1-gamma)*dt*acc(:,i-1);
+    disp(:,i) = disp(:,i-1)+dt*vel(:,i-1)+(.5-Beta)*(dt^2)*acc(:,i-1);
+    % Equilibrium equation
+    S = M + gamma*dt*Damp + Beta*(dt^2)*K;
+%     acc(:,i) = inv(S)*(Bt*F(i)-Damp*vel(:,i)-K*disp(:,i));
+    acc(:,i) = S\(Bt*F(i)-Damp*vel(:,i)-K*disp(:,i));
+    % Correction
+    vel(:,i) = vel(:,i) + dt*gamma*acc(:,i);
+    disp(:,i) = disp(:,i) + (dt^2)*Beta*acc(:,i);
+end
+
+[disp,vel,acc]
+% %------------------------------------------------------------------------
+
 
 %DESLOCAMENTOS
 
