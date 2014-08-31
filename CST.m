@@ -48,6 +48,7 @@ for i = 1:nnods*dfreedom
         Lglobal(i) = 0;   %vetor de cargas
     for j = 1:nnods*dfreedom
         Kglobal(i,j) = 0;  %matriz rigidez global
+        Mglobal(i,j) = 0;   %adicionado
     end
 end
 
@@ -61,7 +62,7 @@ for i = 1:nelem
     A(i) = 0.5*det([1 X(i,1) Y(i,1); 1 X(i,2) Y(i,2); 1 X(i,3) Y(i,3)]);
     
     
-    M=rho*A(i)*t(i)/3*eye(3);
+%     M=rho*A(i)*t(i)/3*eye(3);
 
 %CÁLCULO DOS COEFICIENTES DE FORMA
 
@@ -87,6 +88,9 @@ B = (1/(2*A(i)))*[b(i,1) 0 b(i,2) 0 b(i,3) 0;0 c(i,1) 0 c(i,2) 0 c(i,3); c(i,1) 
 
 K = A(i)*t(i)*B'*C*B;
 
+% adicionado...................
+M=rho*A(i)*t(i)/3*eye(6);
+
 if(i==1)
     Kelem1=K;
 else
@@ -106,7 +110,8 @@ for j = 1:noselem
                 colG = (conectividades(i,j)-1)*dfreedom + k;
                 linG = (conectividades(i,l)-1)*dfreedom + m;
                 Kglobal(linG,colG) = Kglobal(linG,colG) + K(linE,colE);
-%                 Mglobal(linG,colG) = Mglobal(linG,colG) + M(linE,colE);
+%                 Adicionada............................................
+                Mglobal(linG,colG) = Mglobal(linG,colG) + M(linE,colE);
             end
         end
     end
